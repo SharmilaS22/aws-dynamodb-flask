@@ -5,19 +5,22 @@ from decouple import config
 AWS_ACCESS_KEY_ID     = config("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
 REGION_NAME           = config("REGION_NAME")
+# AWS_SESSION_TOKEN     = config("AWS_SESSION_TOKEN")
 
 client = client(
     'dynamodb',
     aws_access_key_id     = AWS_ACCESS_KEY_ID,
     aws_secret_access_key = AWS_SECRET_ACCESS_KEY,
-    region_name           = REGION_NAME
+    region_name           = REGION_NAME,
+    # aws_session_token     = AWS_SESSION_TOKEN,
 )
 
 resource = resource(
     'dynamodb',
     aws_access_key_id     = AWS_ACCESS_KEY_ID,
     aws_secret_access_key = AWS_SECRET_ACCESS_KEY,
-    region_name           = REGION_NAME
+    region_name           = REGION_NAME,
+    # aws_session_token     = AWS_SESSION_TOKEN,
 )
 # BookTable = DynamoDB.Table('Book')
 
@@ -25,41 +28,31 @@ resource = resource(
     https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.create_table
     Create a new table
 '''
+def CreatATableBook():
+        
+    client.create_table(
+        AttributeDefinitions = [ #array of attributes (name and type)
+            {
+                'AttributeName': 'id', # Name of the attribute
+                'AttributeType': 'N'   # N -> Number (S -> String, B-> Binary)
+            }
+        ],
+        TableName = 'Book', # Name of the table 
+        KeySchema = [       # 
+            {
+                'AttributeName': 'id',
+                'KeyType'      : 'HASH' # HASH -> partition key, RANGE -> sort key
+            }
+        ],
+        BillingMode = 'PAY_PER_REQUEST',
+        Tags = [ # OPTIONAL 
+            {
+                'Key' : 'test-resource',
+                'Value': 'dynamodb-test'
 
-client.create_table(
-    AttributeDefinitions = [ #array of attributes (name and type)
-        {
-            'AttributeName': 'id', # Name of the attribute
-            'AttributeType': 'N'   # N -> Number (S -> String, B-> Binary)
-        },
-        {
-            'AttributeName': 'title', # Name of the attribute
-            'AttributeType': 'S'      # S-> string
-        },
-        {
-            'AttributeName': 'author', 
-            'AttributeType': 'S'
-        },
-        {
-            'AttributeName': 'likes', 
-            'AttributeType': 'N'
-        }
-    ],
-    TableName = 'Book', # Name of the table 
-    KeySchema = [       # 
-        {
-            'AttributeName': 'id',
-            'KeyType'      : 'HASH' # HASH -> partition key, RANGE -> sort key
-        }
-    ],
-    Tags = [ # OPTIONAL 
-        {
-            'Key' : 'test-resource',
-            'Value': 'dynamodb-test'
-
-        }
-    ]
-)
+            }
+        ]
+    )
 
 
 '''
@@ -92,7 +85,11 @@ def GetItemFromBook(id):
     response = BookTable.get_item(
         Key = {
             'id'     : id
-        }
+        },
+        AttributesToGet=[
+            'title', 'author' # valid types dont throw error, 
+                              # Other types should be converted to python type before sending as json response
+        ]
     )
 
     return response
@@ -105,12 +102,12 @@ def UpdateItemInBook(id, data:dict):
         },
         AttributeUpdates={
             'title': {
-                'Value': data['title'],
-                'Action': 'PUT'
+                'Value'  : data['title'],
+                'Action' : 'PUT' # DELETE, PUT, ADD
             },
             'author': {
-                'Value': data['author'],
-                'Action': 'PUT'
+                'Value'  : data['author'],
+                'Action' : 'PUT'
             }
         },
         ReturnValues = "UPDATED_NEW"
@@ -125,12 +122,14 @@ def LikeABook(id):
         },
         AttributeUpdates = {
             'likes': {
-                'Value': 1,
-                'Action': 'ADD'
+                'Value'  : 1,
+                'Action' : 'ADD'
             }
         },
         ReturnValues = "UPDATED_NEW"
     )
+    response['Attributes']['likes'] = int(response['Attributes']['likes'])
+
     return response
 
 def ModifyAuthorforBook(id, author):

@@ -1,5 +1,5 @@
 from logging import debug
-from flask import Flask
+from flask import Flask, request
 
 app = Flask(__name__)
 
@@ -8,62 +8,105 @@ import dynamodb_handler as dynamodb
 
 @app.route('/')
 def root_route():
+    dynamodb.CreatATableBook()
     return 'Hello World'
 
-# TODO: GET all books
+# TODO: GET all books route
 
 @app.route('/book', methods=['POST'])
 def addABook():
 
-    id, title, author = 1001, 'Angels and Demons', 'Dan Brown'
+    data = request.get_json()
+    # id, title, author = 1001, 'Angels and Demons', 'Dan Brown'
 
-    response = dynamodb.addItemToBook(id, title, author)
-    return {
+    response = dynamodb.addItemToBook(data['id'], data['title'], data['author'])    
+    
+    if (response['ResponseMetadata']['HTTPStatusCode'] == 200):
+        return {
+            'msg': 'Added successfully',
+        }
+
+    return {  
+        'msg': 'Some error occcured',
         'response': response
     }
 
-# TODO: DELETE all books
+# TODO: DELETE all books route
 
-@app.route('/book/<id>', methods=['GET'])
+@app.route('/book/<int:id>', methods=['GET'])
 def getBook(id):
     response = dynamodb.GetItemFromBook(id)
+    
+    if (response['ResponseMetadata']['HTTPStatusCode'] == 200):
+        
+        if ('Item' in response):
+            return { 'Item': response['Item'] }
+
+        return { 'msg' : 'Item not found!' }
 
     return {
+        'msg': 'Some error occured',
         'response': response
     }
 
-@app.route('/book/<id>', methods=['DELETE'])
+@app.route('/book/<int:id>', methods=['DELETE'])
 def DeleteABook(id):
 
     response = dynamodb.DeleteAnItemFromBook(id)
-    return {
-        'response': response
-    }   
 
-@app.route('/book/<id>', methods=['PUT'])
+    if (response['ResponseMetadata']['HTTPStatusCode'] == 200):
+        return {
+            'msg': 'Deleted successfully',
+        }
+
+    return {  
+        'msg': 'Some error occcured',
+        'response': response
+    } 
+
+@app.route('/book/<int:id>', methods=['PUT'])
 def UpdateABook(id):
 
-    data = {
-        'title': 'Angels And Demons',
-        'author': 'Daniel Brown'
-    }
+    data = request.get_json()
+
+    # data = {
+    #     'title': 'Angels And Demons',
+    #     'author': 'Daniel Brown'
+    # }
 
     response = dynamodb.UpdateItemInBook(id, data)
 
+    if (response['ResponseMetadata']['HTTPStatusCode'] == 200):
+        return {
+            'msg'                : 'Updated successfully',
+            'ModifiedAttributes' : response['Attributes'],
+            'response'           : response['ResponseMetadata']
+        }
+
     return {
-        'response': response
+        'msg'      : 'Some error occured',
+        'response' : response
     }   
 
 
 # like a book - api
-@app.route('/like/book/<id>', methods=['POST'])
+@app.route('/like/book/<int:id>', methods=['POST'])
 def LikeBook(id):
 
     response = dynamodb.LikeABook(id)
 
+    if (response['ResponseMetadata']['HTTPStatusCode'] == 200):
+        return {
+            'msg'      : 'Likes the book successfully',
+            'Likes'    : response['Attributes']['likes'],
+            'response' : response['ResponseMetadata']
+        }
+
     return {
-        'response': response
+        'msg'      : 'Some error occured',
+        'response' : response
     }
 
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='127.0.0.1', port=5000, debug=True)
