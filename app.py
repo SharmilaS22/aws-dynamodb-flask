@@ -1,4 +1,3 @@
-from logging import debug
 from flask import Flask, request
 
 app = Flask(__name__)
@@ -13,6 +12,11 @@ def root_route():
 
 # TODO: GET all books route
 
+
+
+#  Add a book entry
+#  Route: http://localhost:5000/book
+#  Method : POST
 @app.route('/book', methods=['POST'])
 def addABook():
 
@@ -33,6 +37,10 @@ def addABook():
 
 # TODO: DELETE all books route
 
+
+#  Read a book entry
+#  Route: http://localhost:5000/book/<id>
+#  Method : GET
 @app.route('/book/<int:id>', methods=['GET'])
 def getBook(id):
     response = dynamodb.GetItemFromBook(id)
@@ -49,6 +57,10 @@ def getBook(id):
         'response': response
     }
 
+
+#  Delete a book entry
+#  Route: http://localhost:5000/book/<id>
+#  Method : DELETE
 @app.route('/book/<int:id>', methods=['DELETE'])
 def DeleteABook(id):
 
@@ -64,6 +76,10 @@ def DeleteABook(id):
         'response': response
     } 
 
+
+#  Update a book entry
+#  Route: http://localhost:5000/book/<id>
+#  Method : PUT
 @app.route('/book/<int:id>', methods=['PUT'])
 def UpdateABook(id):
 
@@ -90,6 +106,10 @@ def UpdateABook(id):
 
 
 # like a book - api
+
+#  Like a book
+#  Route: http://localhost:5000/like/book/<id>
+#  Method : POST
 @app.route('/like/book/<int:id>', methods=['POST'])
 def LikeBook(id):
 

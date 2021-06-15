@@ -103,14 +103,14 @@ def UpdateItemInBook(id, data:dict):
         AttributeUpdates={
             'title': {
                 'Value'  : data['title'],
-                'Action' : 'PUT' # DELETE, PUT, ADD
+                'Action' : 'PUT' # # available options -> DELETE(delete), PUT(set), ADD(increment)
             },
             'author': {
                 'Value'  : data['author'],
                 'Action' : 'PUT'
             }
         },
-        ReturnValues = "UPDATED_NEW"
+        ReturnValues = "UPDATED_NEW"  # returns the new updated values
     )
     return response
 
